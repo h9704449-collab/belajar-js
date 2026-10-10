@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HSI Student Management</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🎓 HSI Student Management</h1>
+        <p>Student CRUD — Vanilla JavaScript + LocalStorage</p>
+      </header>
+
+      <!-- Area Notifikasi -->
+      <div id="alertMessage" class="alert hidden"></div>
+
+      <!-- Form Tambah / Edit -->
+      <section class="card">
+        <h2 id="formTitle">➕ Tambah Siswa</h2>
+        <form id="studentForm">
+          <div class="form-group">
+            <label for="nameInput">Nama Siswa</label>
+            <input
+              type="text"
+              id="nameInput"
+              placeholder="Masukkan nama siswa"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="scoreInput">Nilai</label>
+            <input
+              type="number"
+              id="scoreInput"
+              placeholder="Masukkan nilai (0-100)"
+              min="0"
+              max="100"
+              required
+            />
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="submitBtn" class="btn btn-primary">
+              ➕ Tambah Siswa
+            </button>
+            <button
+              type="button"
+              id="cancelBtn"
+              class="btn btn-secondary hidden"
+            >
+              ❌ Batal Edit
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Statistik -->
+      <section class="stats">
+        <div class="stat-card">
+          <span class="stat-label">Total Siswa</span>
+          <span class="stat-value" id="totalStudents">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Rata-rata Nilai</span>
+          <span class="stat-value" id="averageScore">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tertinggi 🏆</span>
+          <span class="stat-value" id="highestScore">-</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Terendah 📉</span>
+          <span class="stat-value" id="lowestScore">-</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Nilai ≥ 75</span>
+          <span class="stat-value" id="passedCount">0</span>
+        </div>
+      </section>
+
+      <!-- Daftar Siswa -->
+      <section class="card">
+        <h2>📋 Daftar Siswa</h2>
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input"
+          placeholder="🔍 Cari siswa berdasarkan nama..."
+        />
+        <div id="studentList"></div>
+        <button type="button" id="deleteAllBtn" class="btn btn-danger-outline">
+          🧹 Hapus Semua Siswa
+        </button>
+      </section>
+    </div>
+
+    <script>
+      // ==========================================
+      // HSI STUDENT MANAGEMENT — script.js
+      // CRUD + LocalStorage (Vanilla JS)
+      // ==========================================
+
+      // ---------- STATE ----------
+      let students = []; // array utama penyimpanan data
+      let editingId = null; // null = mode tambah, ada angka = sedang edit
+      let alertTimeout = null;
+
+      const STORAGE_KEY = "students";
+
+      // ---------- ELEMEN DOM ----------
+      const studentForm = document.getElementById("studentForm");
+      const nameInput = document.getElementById("nameInput");
+      const scoreInput = document.getElementById("scoreInput");
+      const submitBtn = document.getElementById("submitBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const formTitle = document.getElementById("formTitle");
+      const studentList = document.getElementById("studentList");
+      const alertBox = document.getElementById("alertMessage");
+      const searchInput = document.getElementById("searchInput");
+      const deleteAllBtn = document.getElementById("deleteAllBtn");
+
+      const totalEl = document.getElementById("totalStudents");
+      const averageEl = document.getElementById("averageScore");
+      const highestEl = document.getElementById("highestScore");
+      const lowestEl = document.getElementById("lowestScore");
+      const passedEl = document.getElementById("passedCount");
+
+      // ---------- INIT (CEK LOCALSTORAGE) ----------
+      // Script dipanggil di akhir <body>, jadi DOM sudah siap.
+      function loadStudents() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (data) {
+          students = JSON.parse(data); // ada data → ambil dari LocalStorage
+        } else {
+          students = []; // tidak ada → array kosong
+        }
+        renderStudents();
+      }
+
+      // ---------- HELPER ----------
+      function saveStudents() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+      }
+
+      function showAlert(message) {
+        alertBox.textContent = message;
+        alertBox.classList.remove("hidden");
+
+        // ⏱️ Bonus: alert otomatis hilang setelah 3 detik
+        clearTimeout(alertTimeout);
+        alertTimeout = setTimeout(function () {
+          alertBox.classList.add("hidden");
+        }, 3000);
+      }
+
+      // id baru = id terbesar + 1 (agar id tidak duplikat setelah hapus)
+      function getNextId() {
+        let maxId = 0;
+        for (let i = 0; i < students.length; i++) {
+          if (students[i].id > maxId) {
+            maxId = students[i].id;
+          }
+        }
+        return maxId + 1;
+      }
+
+      // 🎨 Bonus: kelas warna berdasarkan nilai
+      function getScoreClass(score) {
+        if (score >= 85) return "score-high";
+        if (score >= 75) return "score-mid";
+        return "score-low";
+      }
+
+      // cari student berdasarkan id → return object atau null
+      function findStudent(id) {
+        for (let i = 0; i < students.length; i++) {
+          if (students[i].id === id) {
+            return students[i];
+          }
+        }
+        return null;
+      }
+
+      // ---------- RENDER (Data → UI) ----------
+      function renderStudents() {
+        // 🔍 Bonus: filter berdasarkan kata kunci pencarian
+        const keyword = searchInput.value.trim().toLowerCase();
+        let filtered = students;
+        if (keyword !== "") {
+          filtered = students.filter(function (s) {
+            return s.name.toLowerCase().includes(keyword);
+          });
+        }
+
+        // belum ada data sama sekali
+        if (students.length === 0) {
+          studentList.innerHTML = `<p class="empty">📭 Belum ada data siswa. Tambahkan siswa pertama!</p>`;
+          updateStats();
+          return;
+        }
+
+        // hasil pencarian kosong
+        if (filtered.length === 0) {
+          studentList.innerHTML = `<p class="empty">🔍 Siswa dengan nama "${keyword}" tidak ditemukan.</p>`;
+          updateStats();
+          return;
+        }
+
+        let html = "";
+        for (let i = 0; i < filtered.length; i++) {
+          const s = filtered[i];
+          const isEditing = editingId === s.id ? "editing" : "";
+          html += `
+            <div class="student-item ${isEditing}">
+                <div class="student-info">
+                    <span class="student-number">${i + 1}.</span>
+                    <span class="student-name">${s.name}</span>
+                    <span class="student-score ${getScoreClass(s.score)}">Nilai: ${s.score}</span>
+                </div>
+                <div class="student-actions">
+                    <button class="btn btn-edit" onclick="editStudent(${s.id})">✏️ Ubah</button>
+                    <button class="btn btn-delete" onclick="deleteStudent(${s.id})">🗑️ Hapus</button>
+                </div>
+            </div>
+        `;
+        }
+        studentList.innerHTML = html;
+        updateStats();
+      }
+
+      function updateStats() {
+        totalEl.textContent = students.length;
+
+        if (students.length === 0) {
+          averageEl.textContent = "0";
+          highestEl.textContent = "-";
+          lowestEl.textContent = "-";
+          passedEl.textContent = "0";
+          return;
+        }
+
+        let total = 0;
+        let highest = students[0].score;
+        let lowest = students[0].score;
+        let passed = 0;
+
+        for (let i = 0; i < students.length; i++) {
+          total += students[i].score;
+          if (students[i].score > highest) highest = students[i].score;
+          if (students[i].score < lowest) lowest = students[i].score;
+          if (students[i].score >= 75) passed++;
+        }
+
+        averageEl.textContent = (total / students.length).toFixed(1);
+        highestEl.textContent = highest;
+        lowestEl.textContent = lowest;
+        passedEl.textContent = passed;
+      }
+
+      // ---------- CREATE & UPDATE (satu form, dua mode) ----------
+      studentForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // ⚡ WAJIB: agar form tidak refresh halaman
+
+        const name = nameInput.value.trim();
+        const score = Number(scoreInput.value);
+
+        // validasi sederhana
+        if (
+          name === "" ||
+          scoreInput.value.trim() === "" ||
+          isNaN(score) ||
+          score < 0 ||
+          score > 100
+        ) {
+          showAlert(
+            "⚠️ Nama tidak boleh kosong dan nilai harus di antara 0–100.",
+          );
+          return;
+        }
+
+        if (editingId === null) {
+          addStudent(name, score);
+        } else {
+          updateStudent(name, score);
+        }
+      });
+
+      function addStudent(name, score) {
+        const newStudent = {
+          id: getNextId(),
+          name: name,
+          score: score,
+        };
+
+        students.push(newStudent); // 1. update array
+        saveStudents(); // 2. simpan ke LocalStorage
+        renderStudents(); // 3. render ulang UI
+        resetForm(); // 4. kosongkan form
+        showAlert(`✅ Data siswa ${name} berhasil ditambahkan.`);
+      }
+
+      function editStudent(id) {
+        const found = findStudent(id);
+        if (found === null) return;
+
+        // masukkan data siswa ke dalam form
+        editingId = id;
+        nameInput.value = found.name;
+        scoreInput.value = found.score;
+
+        // ubah mode form menjadi "update"
+        formTitle.textContent = "✏️ Ubah Siswa";
+        submitBtn.textContent = "💾 Update Siswa";
+        cancelBtn.classList.remove("hidden");
+
+        renderStudents(); // untuk menandai item yang sedang diedit
+        nameInput.focus();
+      }
+
+      function updateStudent(name, score) {
+        for (let i = 0; i < students.length; i++) {
+          if (students[i].id === editingId) {
+            students[i].name = name;
+            students[i].score = score;
+            break;
+          }
+        }
+
+        saveStudents();
+        renderStudents();
+        resetForm(); // kembalikan tombol jadi "Tambah Siswa"
+        showAlert(`🔄 Data siswa ${name} berhasil diperbarui.`);
+      }
+
+      // ❌ Bonus: tombol batal edit
+      function cancelEdit() {
+        resetForm();
+        renderStudents();
+      }
+
+      function resetForm() {
+        editingId = null;
+        studentForm.reset();
+        formTitle.textContent = "➕ Tambah Siswa";
+        submitBtn.textContent = "➕ Tambah Siswa";
+        cancelBtn.classList.add("hidden");
+      }
+
+      // ---------- DELETE ----------
+      function deleteStudent(id) {
+        const found = findStudent(id);
+        if (found === null) return;
+
+        // ⚠️ confirm dulu, TIDAK BOLEH langsung hapus
+        const isConfirmed = confirm(
+          `Apakah kamu yakin ingin menghapus siswa ${found.name}?`,
+        );
+
+        // user pilih Cancel → tidak ada yang berubah
+        if (!isConfirmed) return;
+
+        // user pilih OK → hapus dari array
+        students = students.filter(function (s) {
+          return s.id !== id;
+        });
+
+        // jika siswa yang dihapus sedang diedit, batalkan mode edit
+        if (editingId === id) resetForm();
+
+        saveStudents();
+        renderStudents(); // total & rata-rata ikut ter-update
+        showAlert(`🗑️ Data siswa ${found.name} berhasil dihapus.`);
+      }
+
+      // 🧹 Bonus: hapus semua siswa dengan confirmation
+      deleteAllBtn.addEventListener("click", function () {
+        if (students.length === 0) {
+          showAlert("⚠️ Tidak ada siswa untuk dihapus.");
+          return;
+        }
+
+        const isConfirmed = confirm(
+          `Apakah kamu yakin ingin menghapus SEMUA siswa (${students.length} orang)?`,
+        );
+        if (!isConfirmed) return;
+
+        students = [];
+        saveStudents();
+        renderStudents();
+        resetForm();
+        showAlert("🧹 Semua data siswa berhasil dihapus.");
+      });
+
+      // 🔍 Bonus: pencarian langsung saat mengetik
+      searchInput.addEventListener("input", renderStudents);
+
+      cancelBtn.addEventListener("click", cancelEdit);
+
+      // ---------- MULAI APLIKASI ----------
+      loadStudents();
+    </script>
+  </body>
+</html>

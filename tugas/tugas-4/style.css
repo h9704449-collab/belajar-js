@@ -1,0 +1,253 @@
+/* ==========================================
+   HSI STUDENT MANAGEMENT — style.css
+   ========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 24px 16px;
+}
+
+.container {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 24px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+}
+
+header p {
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+/* ---------- CARD ---------- */
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+/* ---------- ALERT ---------- */
+.alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+/* ---------- FORM ---------- */
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ---------- BUTTON ---------- */
+.btn {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: #667eea;
+    color: #fff;
+    flex: 1;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-edit {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.btn-delete {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-danger-outline {
+    background: #fff;
+    border: 2px solid #fca5a5;
+    color: #b91c1c;
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* ---------- STATISTIK ---------- */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    color: #fff;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.72rem;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+/* ---------- SEARCH ---------- */
+.search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* ---------- DAFTAR SISWA ---------- */
+.student-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #eef0f4;
+    border-left: 4px solid #667eea;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #fafbfe;
+}
+
+/* sorot item yang sedang diedit */
+.student-item.editing {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.student-number {
+    color: #9ca3af;
+    font-weight: 700;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* warna badge berdasarkan nilai */
+.student-score {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.score-high { background: #d1fae5; color: #065f46; }  /* ≥ 85 hijau  */
+.score-mid  { background: #fef3c7; color: #92400e; }  /* 75–84 kuning */
+.score-low  { background: #fee2e2; color: #991b1b; }  /* < 75 merah   */
+
+.student-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 20px 0;
+}
+
+.hidden {
+    display: none;
+}

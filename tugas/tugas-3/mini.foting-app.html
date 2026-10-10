@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Voting App — What Should We Build Next?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ===== CSS VARIABLES ===== */
+        :root { 
+            --bg-primary: #0f1117;
+            --bg-secondary: #161822;
+            --bg-card: #1c1f2e;
+            --bg-card-hover: #232640;
+            --accent: #00e68a;
+            --accent-glow: rgba(0, 230, 138, 0.15);
+            --accent-dim: #00b36b;
+            --text-primary: #eef0f6;
+            --text-secondary: #8b8fa3;
+            --text-muted: #555872;
+            --border: #2a2d42;
+            --danger: #ff4d6a;
+            --warning: #ffb347;
+            --blue: #4d9fff;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== BACKGROUND DECORATION ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 230, 138, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            left: -200px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(77, 159, 255, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ===== LAYOUT ===== */
+        .app-container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(0, 230, 138, 0.2);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(24px, 5vw, 34px);
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* ===== WINNER SECTION ===== */
+        .winner-section {
+            background: linear-gradient(135deg, rgba(0, 230, 138, 0.08), rgba(0, 230, 138, 0.02));
+            border: 1px solid rgba(0, 230, 138, 0.15);
+            border-radius: var(--radius);
+            padding: 18px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.4s ease;
+        }
+
+        .winner-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .winner-info {
+            flex: 1;
+        }
+
+        .winner-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .winner-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .winner-votes {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .winner-crown {
+            font-size: 28px;
+            flex-shrink: 0;
+            animation: crownBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .winner-section.no-votes .winner-name {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .winner-section.no-votes .winner-votes {
+            display: none;
+        }
+
+        .winner-section.no-votes .winner-crown {
+            opacity: 0.3;
+            animation: none;
+        }
+
+        /* ===== CANDIDATE CARDS GRID ===== */
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (min-width: 600px) {
+            .candidates-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ===== CANDIDATE CARD ===== */
+        .candidate-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .candidate-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--card-accent, var(--accent));
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .candidate-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .candidate-card:hover::before {
+            opacity: 1;
+        }
+
+        .candidate-card.is-winner {
+            border-color: rgba(0, 230, 138, 0.25);
+            box-shadow: 0 0 20px rgba(0, 230, 138, 0.06);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .card-emoji {
+            font-size: 36px;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .card-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+        }
+
+        .card-desc {
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* ===== VOTE STATS ===== */
+        .vote-stats {
+            margin-bottom: 14px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .vote-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .vote-count span {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .vote-percent {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--card-accent, var(--accent));
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--card-accent, var(--accent));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* ===== VOTE BUTTON ===== */
+        .vote-btn {
+            width: 100%;
+            padding: 11px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--card-accent, var(--accent));
+            color: #0f1117;
+        }
+
+        .vote-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 230, 138, 0.25);
+        }
+
+        .vote-btn:active {
+            transform: translateY(0);
+            filter: brightness(0.95);
+        }
+
+        /* ===== TOTAL VOTES BAR ===== */
+        .total-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .total-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .total-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn.reset-btn:hover {
+            border-color: rgba(255, 77, 106, 0.3);
+            color: var(--danger);
+        }
+
+        /* ===== FEEDBACK TOAST ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-icon {
+            font-size: 18px;
+        }
+
+        /* ===== CONFIRM MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .modal-overlay.show .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .modal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--accent);
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .modal-close-btn {
+            padding: 10px 32px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            color: #0f1117;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .modal-close-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* ===== VOTE ANIMATION ===== */
+        @keyframes votePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .vote-pop {
+            animation: votePop 0.3s ease;
+        }
+
+        /* ===== FLOATING PARTICLES ===== */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 0;
+                transform: translateY(100vh) scale(0);
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-10vh) scale(1);
+            }
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 599px) {
+            .app-container {
+                padding: 24px 16px 48px;
+            }
+
+            .candidate-card {
+                padding: 20px;
+            }
+
+            .total-bar {
+                padding: 14px 18px;
+            }
+
+            .total-number {
+                font-size: 24px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .winner-section {
+                padding: 14px 18px;
+            }
+
+            .winner-name {
+                font-size: 17px;
+            }
+        }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Partikel latar belakang -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Kontainer Utama -->
+    <div class="app-container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-label">
+                <i class="fas fa-poll"></i> Live Voting
+            </div>
+            <h1>What Should We Build Next? 🚀</h1>
+            <p>Pilih project yang ingin kita buat selanjutnya!</p>
+        </header>
+
+        <!-- Current Winner -->
+        <section class="winner-section no-votes" id="winnerSection" aria-live="polite">
+            <div class="winner-icon" id="winnerIcon">🏆</div>
+            <div class="winner-info">
+                <div class="winner-label">Current Leader</div>
+                <div class="winner-name" id="winnerName">Belum ada vote</div>
+                <div class="winner-votes" id="winnerVotes"></div>
+            </div>
+            <div class="winner-crown">👑</div>
+        </section>
+
+        <!-- Kandidat Cards -->
+        <main class="candidates-grid" id="candidatesGrid">
+            <!-- Card 1: Mini Game -->
+            <article class="candidate-card" id="card-0" style="--card-accent: #00e68a;">
+                <div class="card-top">
+                    <div class="card-emoji">🎮</div>
+                    <div class="card-text">
+                        <div class="card-name">Mini Game</div>
+                        <div class="card-desc">Game sederhana berbasis browser untuk hiburan</div>
+                    </div>
+                </div>
+                <div class="vote-stats">
+                    <div class="stats-row">
+                        <div class="vote-count">Votes: <strong id="votes-0">0</strong></div>
+                        <div class="vote-percent" id="percent-0">0%</div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="bar-0"></div>
+                    </div>
+                </div>
+                <button class="vote-btn" id="btn-0" aria-label="Vote untuk Mini Game">
+                    <i class="fas fa-check-circle"></i> Vote
+                </button>
+            </article>
+
+            <!-- Card 2: Mini Store -->
+            <article class="candidate-card" id="card-1" style="--card-accent: #4d9fff;">
+                <div class="card-top">
+                    <div class="card-emoji">🛒</div>
+                    <div class="card-text">
+                        <div class="card-name">Mini Store</div>
+                        <div class="card-desc">Toko online sederhana dengan fitur keranjang</div>
+                    </div>
+                </div>
+                <div class="vote-stats">
+                    <div class="stats-row">
+                        <div class="vote-count">Votes: <strong id="votes-1">0</strong></div>
+                        <div class="vote-percent" id="percent-1">0%</div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="bar-1"></div>
+                    </div>
+                </div>
+                <button class="vote-btn" id="btn-1" aria-label="Vote untuk Mini Store">
+                    <i class="fas fa-check-circle"></i> Vote
+                </button>
+            </article>
+
+            <!-- Card 3: To-Do App -->
+            <article class="candidate-card" id="card-2" style="--card-accent: #ffb347;">
+                <div class="card-top">
+                    <div class="card-emoji">📝</div>
+                    <div class="card-text">
+                        <div class="card-name">To-Do App</div>
+                        <div class="card-desc">Aplikasi pencatatan tugas harian yang praktis</div>
+                    </div>
+                </div>
+                <div class="vote-stats">
+                    <div class="stats-row">
+                        <div class="vote-count">Votes: <strong id="votes-2">0</strong></div>
+                        <div class="vote-percent" id="percent-2">0%</div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="bar-2"></div>
+                    </div>
+                </div>
+                <button class="vote-btn" id="btn-2" aria-label="Vote untuk To-Do App">
+                    <i class="fas fa-check-circle"></i> Vote
+                </button>
+            </article>
+
+            <!-- Card 4: Quiz App -->
+            <article class="candidate-card" id="card-3" style="--card-accent: #a78bfa;">
+                <div class="card-top">
+                    <div class="card-emoji">🧠</div>
+                    <div class="card-text">
+                        <div class="card-name">Quiz App</div>
+                        <div class="card-desc">Aplikasi kuis interaktif untuk belajar seru</div>
+                    </div>
+                </div>
+                <div class="vote-stats">
+                    <div class="stats-row">
+                        <div class="vote-count">Votes: <strong id="votes-3">0</strong></div>
+                        <div class="vote-percent" id="percent-3">0%</div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="bar-3"></div>
+                    </div>
+                </div>
+                <button class="vote-btn" id="btn-3" aria-label="Vote untuk Quiz App">
+                    <i class="fas fa-check-circle"></i> Vote
+                </button>
+            </article>
+        </main>
+
+        <!-- Total Votes -->
+        <section class="total-bar">
+            <div class="total-label">Total Votes</div>
+            <div class="total-number" id="totalVotes">0</div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+            <button class="action-btn reset-btn" id="resetBtn" aria-label="Reset semua voting">
+                <i class="fas fa-rotate-right"></i> Reset Voting
+            </button>
+            <button class="action-btn" id="fullscreenBtn" aria-label="Tampilan fullscreen">
+                <i class="fas fa-expand"></i> Fullscreen
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Mini Voting App &mdash; HSI Boarding School &mdash; Web Programming</p>
+        </footer>
+    </div>
+
+    <!-- Toast Feedback -->
+    <div class="toast-container">
+        <div class="toast" id="toast">
+            <span class="toast-icon" id="toastIcon">✅</span>
+            <span id="toastText">Vote berhasil!</span>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Vote -->
+    <div class="modal-overlay" id="modal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-emoji" id="modalEmoji">🎮</div>
+            <div class="modal-title">Vote Berhasil!</div>
+            <div class="modal-subtitle" id="modalText">Kamu memilih Mini Game</div>
+            <button class="modal-close-btn" id="modalCloseBtn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        /* ===================================================
+         *  DATA KANDIDAT
+         *  Setiap kandidat punya: nama, emoji, dan jumlah vote
+         * =================================================== */
+        const candidates = [
+            { name: "Mini Game",  emoji: "🎮", votes: 0 },
+            { name: "Mini Store", emoji: "🛒", votes: 0 },
+            { name: "To-Do App",  emoji: "📝", votes: 0 },
+            { name: "Quiz App",   emoji: "🧠", votes: 0 }
+        ];
+
+        /* ===================================================
+         *  REFERENSI DOM
+         *  Mengambil elemen-elemen yang dibutuhkan dari HTML
+         * =================================================== */
+        // Elemen untuk setiap kandidat
+        const voteButtons = [];   // Tombol vote
+        const voteTexts = [];     // Teks jumlah vote
+        const percentTexts = [];  // Teks persentase
+        const progressBars = [];  // Progress bar
+        const cards = [];         // Card container
+
+        for (let i = 0; i < candidates.length; i++) {
+            voteButtons.push(document.querySelector("#btn-" + i));
+            voteTexts.push(document.querySelector("#votes-" + i));
+            percentTexts.push(document.querySelector("#percent-" + i));
+            progressBars.push(document.querySelector("#bar-" + i));
+            cards.push(document.querySelector("#card-" + i));
+        }
+
+        // Elemen lainnya
+        const totalVotesEl = document.querySelector("#totalVotes");
+        const winnerSection = document.querySelector("#winnerSection");
+        const winnerIcon = document.querySelector("#winnerIcon");
+        const winnerName = document.querySelector("#winnerName");
+        const winnerVotes = document.querySelector("#winnerVotes");
+
+        const toast = document.querySelector("#toast");
+        const toastIcon = document.querySelector("#toastIcon");
+        const toastText = document.querySelector("#toastText");
+
+        const modal = document.querySelector("#modal");
+        const modalEmoji = document.querySelector("#modalEmoji");
+        const modalText = document.querySelector("#modalText");
+        const modalCloseBtn = document.querySelector("#modalCloseBtn");
+
+        const resetBtn = document.querySelector("#resetBtn");
+        const fullscreenBtn = document.querySelector("#fullscreenBtn");
+
+        /* ===================================================
+         *  VARIABEL UNTUK TOAST TIMER
+         *  Menyimpan ID timeout agar bisa di-cancel
+         * =================================================== */
+        let toastTimer = null;
+
+        /* ===================================================
+         *  FUNGSI: hitungTotalVotes()
+         *  Menjumlahkan seluruh vote dari semua kandidat
+         * =================================================== */
+        function hitungTotalVotes() {
+            let total = 0;
+            for (let i = 0; i < candidates.length; i++) {
+                total = total + candidates[i].votes;
+            }
+            return total;
+        }
+
+        /* ===================================================
+         *  FUNGSI: updateUI()
+         *  Memperbarui seluruh tampilan: vote, persentase,
+         *  progress bar, total, dan current winner
+         * =================================================== */
+        function updateUI() {
+            const total = hitungTotalVotes();
+
+            // Update setiap kandidat
+            for (let i = 0; i < candidates.length; i++) {
+                const v = candidates[i].votes;
+                const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+
+                // Update teks vote
+                voteTexts[i].textContent = v;
+
+                // Update teks persentase
+                percentTexts[i].textContent = pct + "%";
+
+                // Update lebar progress bar
+                progressBars[i].style.width = pct + "%";
+            }
+
+            // Update total votes
+            totalVotesEl.textContent = total;
+
+            // Update current winner
+            updateWinner();
+        }
+
+        /* ===================================================
+         *  FUNGSI: updateWinner()
+         *  Mencari kandidat dengan vote tertinggi dan
+         *  menampilkannya di section winner
+         * =================================================== */
+        function updateWinner() {
+            const total = hitungTotalVotes();
+
+            // Jika belum ada vote
+            if (total === 0) {
+                winnerSection.classList.add("no-votes");
+                winnerIcon.textContent = "🏆";
+                winnerName.textContent = "Belum ada vote";
+                winnerVotes.textContent = "";
+                // Hapus highlight dari semua card
+                for (let i = 0; i < cards.length; i++) {
+                    cards[i].classList.remove("is-winner");
+                }
+                return;
+            }
+
+            // Cari vote tertinggi
+            let maxVotes = 0;
+            let winnerIndex = 0;
+
+            for (let i = 0; i < candidates.length; i++) {
+                if (candidates[i].votes > maxVotes) {
+                    maxVotes = candidates[i].votes;
+                    winnerIndex = i;
+                }
+            }
+
+            // Update tampilan winner
+            winnerSection.classList.remove("no-votes");
+            winnerIcon.textContent = candidates[winnerIndex].emoji;
+            winnerName.textContent = candidates[winnerIndex].name;
+            winnerVotes.textContent = maxVotes + " Votes";
+
+            // Highlight card yang menang
+            for (let i = 0; i < cards.length; i++) {
+                if (i === winnerIndex) {
+                    cards[i].classList.add("is-winner");
+                } else {
+                    cards[i].classList.remove("is-winner");
+                }
+            }
+        }
+
+        /* ===================================================
+         *  FUNGSI: showToast(icon, message)
+         *  Menampilkan notifikasi singkat di bagian bawah
+         * =================================================== */
+        function showToast(icon, message) {
+            // Cancel toast sebelumnya jika ada
+            if (toastTimer !== null) {
+                clearTimeout(toastTimer);
+                toast.classList.remove("show");
+            }
+
+            toastIcon.textContent = icon;
+            toastText.textContent = message;
+
+            // Tampilkan toast dengan sedikit delay untuk animasi
+            requestAnimationFrame(function () {
+                toast.classList.add("show");
+            });
+
+            // Sembunyikan setelah 2.5 detik
+            toastTimer = setTimeout(function () {
+                toast.classList.remove("show");
+                toastTimer = null;
+            }, 2500);
+        }
+
+        /* ===================================================
+         *  FUNGSI: showModal(emoji, name)
+         *  Menampilkan modal konfirmasi setelah vote
+         * =================================================== */
+        function showModal(emoji, name) {
+            modalEmoji.textContent = emoji;
+            modalText.textContent = "Kamu memilih " + name;
+            modal.classList.add("show");
+        }
+
+        /* ===================================================
+         *  EVENT: Tombol Vote untuk setiap kandidat
+         *  Menggunakan addEventListener("click", ...)
+         * =================================================== */
+        for (let i = 0; i < candidates.length; i++) {
+            // Menggunakan closure agar index i terjaga
+            voteButtons[i].addEventListener("click", function () {
+                // Tambah vote
+                candidates[i].votes++;
+
+                // Animasi pop pada card
+                cards[i].classList.remove("vote-pop");
+                // Trigger reflow agar animasi bisa diulang
+                void cards[i].offsetWidth;
+                cards[i].classList.add("vote-pop");
+
+                // Update seluruh UI
+                updateUI();
+
+                // Tampilkan feedback
+                showToast("✅", "Vote berhasil! Kamu memilih " + candidates[i].name);
+
+                // Tampilkan modal konfirmasi
+                showModal(candidates[i].emoji, candidates[i].name);
+            });
+        }
+
+        /* ===================================================
+         *  EVENT: Tombol Reset Voting
+         *  Mengembalikan semua vote ke 0
+         * =================================================== */
+        resetBtn.addEventListener("click", function () {
+            // Reset semua vote ke 0
+            for (let i = 0; i < candidates.length; i++) {
+                candidates[i].votes = 0;
+            }
+
+            // Update UI
+            updateUI();
+
+            // Tampilkan feedback
+            showToast("🔄", "Semua vote telah direset!");
+        });
+
+        /* ===================================================
+         *  EVENT: Tombol Fullscreen
+         *  Membuka/menutup mode fullscreen
+         * =================================================== */
+        fullscreenBtn.addEventListener("click", function () {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(function () {
+                    showToast("⚠️", "Fullscreen tidak didukung browser ini");
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        /* ===================================================
+         *  EVENT: Tombol Tutup Modal
+         * =================================================== */
+        modalCloseBtn.addEventListener("click", function () {
+            modal.classList.remove("show");
+        });
+
+        // Klik di luar modal untuk menutup
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+                modal.classList.remove("show");
+            }
+        });
+
+        // Tekan Escape untuk menutup modal
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && modal.classList.contains("show")) {
+                modal.classList.remove("show");
+            }
+        });
+
+        /* ===================================================
+         *  PARTIKEL LATAR BELAKANG
+         *  Membuat efek partikel mengambang di background
+         * =================================================== */
+        function createParticles() {
+            const container = document.querySelector("#particles");
+            const count = 15;
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement("div");
+                particle.classList.add("particle");
+
+                // Posisi horizontal acak
+                particle.style.left = Math.random() * 100 + "%";
+
+                // Ukuran acak
+                const size = Math.random() * 3 + 1;
+                particle.style.width = size + "px";
+                particle.style.height = size + "px";
+
+                // Durasi animasi acak (10-20 detik)
+                const duration = Math.random() * 10 + 10;
+                particle.style.animationDuration = duration + "s";
+
+                // Delay acak agar tidak semuanya muncul bersamaan
+                particle.style.animationDelay = Math.random() * duration + "s";
+
+                // Warna acak dari palet
+                const colors = ["#00e68a", "#4d9fff", "#ffb347", "#a78bfa"];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+                container.appendChild(particle);
+            }
+        }
+
+        // Jalankan pembuatan partikel
+        createParticles();
+
+        /* ===================================================
+         *  INISIALISASI
+         *  Set UI ke kondisi awal
+         * =================================================== */
+        updateUI();
+    </script>
+</body>
+</html>

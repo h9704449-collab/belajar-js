@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Product Explorer</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <header class="header">
+      <div>
+        <p class="subtitle">JS Weekly Challenge #4</p>
+        <h1>Product Explorer</h1>
+        <p class="description"> 
+          Cari, filter, urutkan, dan lihat detail product dari DummyJSON API.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- FILTER -->
+      <section class="filter-section">
+        <div class="search-box">
+          <label for="searchInput">🔍 Search Product</label>
+
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Cari nama product..."
+          />
+        </div>
+
+        <div class="filter-box">
+          <label for="categorySelect">🏷️ Category</label>
+
+          <select id="categorySelect">
+            <option value="all">Semua kategori</option>
+          </select>
+        </div>
+
+        <div class="filter-box">
+          <label for="sortSelect">↕️ Sorting</label>
+
+          <select id="sortSelect">
+            <option value="default">Default</option>
+            <option value="price-low">Harga Terendah</option>
+            <option value="price-high">Harga Tertinggi</option>
+            <option value="rating-high">Rating Tertinggi</option>
+            <option value="name-az">Nama A - Z</option>
+          </select>
+        </div>
+
+        <button id="resetButton" class="reset-button">🔄 Reset Filter</button>
+      </section>
+
+      <!-- COUNTER -->
+      <section class="result-info">
+        <h2>Products</h2>
+
+        <p id="productCounter">Loading product...</p>
+      </section>
+
+      <!-- LOADING -->
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Memuat product...</p>
+      </div>
+
+      <!-- ERROR -->
+      <div id="errorMessage" class="error-message hidden">
+        <h3>❌ Gagal mengambil data</h3>
+        <p>Periksa koneksi internet kamu lalu coba lagi.</p>
+      </div>
+
+      <!-- PRODUCT GRID -->
+      <section id="productContainer" class="product-grid"></section>
+    </main>
+
+    <!-- MODAL -->
+    <div id="productModal" class="modal hidden">
+      <div class="modal-content">
+        <button id="closeModal" class="close-button">&times;</button>
+
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      // ==========================================
+      // PRODUCT EXPLORER API
+      // ==========================================
+
+      // API
+      const API_URL = "https://dummyjson.com/products";
+
+      // ==========================================
+      // STATE
+      // ==========================================
+
+      let allProducts = [];
+      let filteredProducts = [];
+
+      // ==========================================
+      // DOM ELEMENT
+      // ==========================================
+
+      const productContainer = document.getElementById("productContainer");
+
+      const searchInput = document.getElementById("searchInput");
+
+      const categorySelect = document.getElementById("categorySelect");
+
+      const sortSelect = document.getElementById("sortSelect");
+
+      const resetButton = document.getElementById("resetButton");
+
+      const productCounter = document.getElementById("productCounter");
+
+      const loading = document.getElementById("loading");
+
+      const errorMessage = document.getElementById("errorMessage");
+
+      const productModal = document.getElementById("productModal");
+
+      const modalBody = document.getElementById("modalBody");
+
+      const closeModal = document.getElementById("closeModal");
+
+      // ==========================================
+      // FETCH PRODUCT
+      // ==========================================
+
+      async function fetchProducts() {
+        try {
+          loading.classList.remove("hidden");
+          errorMessage.classList.add("hidden");
+
+          const response = await fetch(API_URL);
+
+          if (!response.ok) {
+            throw new Error("Gagal mengambil data product");
+          }
+
+          const data = await response.json();
+
+          allProducts = data.products;
+
+          filteredProducts = [...allProducts];
+
+          createCategoryOptions();
+
+          renderProducts();
+        } catch (error) {
+          console.error(error);
+
+          errorMessage.classList.remove("hidden");
+        } finally {
+          loading.classList.add("hidden");
+        }
+      }
+
+      // ==========================================
+      // CREATE CATEGORY OPTIONS
+      // ==========================================
+
+      function createCategoryOptions() {
+        const categories = [
+          ...new Set(allProducts.map((product) => product.category)),
+        ];
+
+        categories.sort();
+
+        categories.forEach((category) => {
+          const option = document.createElement("option");
+
+          option.value = category;
+          option.textContent = category;
+
+          categorySelect.appendChild(option);
+        });
+      }
+
+      // ==========================================
+      // RENDER PRODUCTS
+      // ==========================================
+
+      function renderProducts() {
+        productContainer.innerHTML = "";
+
+        if (filteredProducts.length === 0) {
+          productContainer.innerHTML = `
+            <div class="error-message">
+                <h3>😢 Product tidak ditemukan</h3>
+                <p>Coba gunakan kata pencarian atau kategori lain.</p>
+            </div>
+        `;
+
+          updateCounter();
+
+          return;
+        }
+
+        filteredProducts.forEach((product) => {
+          const card = document.createElement("article");
+
+          card.className = "product-card";
+
+          card.innerHTML = `
+            <img
+                src="${product.thumbnail}"
+                alt="${product.title}"
+                class="product-image"
+            >
+
+            <div class="product-info">
+
+                <span class="product-category">
+                    ${product.category}
+                </span>
+
+                <h3 class="product-title">
+                    ${product.title}
+                </h3>
+
+                <p class="product-description">
+                    ${product.description}
+                </p>
+
+                <div class="product-price">
+                    $${product.price}
+                </div>
+
+                <div class="product-rating">
+                    ⭐ ${product.rating}
+                </div>
+
+                <button
+                    class="detail-button"
+                    data-id="${product.id}"
+                >
+                    👀 Lihat Detail
+                </button>
+
+            </div>
+        `;
+
+          productContainer.appendChild(card);
+        });
+
+        updateCounter();
+      }
+
+      // ==========================================
+      // UPDATE COUNTER
+      // ==========================================
+
+      function updateCounter() {
+        productCounter.textContent = `${filteredProducts.length} dari ${allProducts.length} product ditampilkan.`;
+      }
+
+      // ==========================================
+      // APPLY FILTER
+      // ==========================================
+
+      function applyFilters() {
+        const searchValue = searchInput.value.toLowerCase().trim();
+
+        const selectedCategory = categorySelect.value;
+
+        const selectedSort = sortSelect.value;
+
+        // ======================================
+        // SEARCH + CATEGORY
+        // ======================================
+
+        filteredProducts = allProducts.filter((product) => {
+          const matchesSearch = product.title
+            .toLowerCase()
+            .includes(searchValue);
+
+          const matchesCategory =
+            selectedCategory === "all" || product.category === selectedCategory;
+
+          return matchesSearch && matchesCategory;
+        });
+
+        // ======================================
+        // SORTING
+        // ======================================
+
+        if (selectedSort === "price-low") {
+          filteredProducts.sort((a, b) => {
+            return a.price - b.price;
+          });
+        } else if (selectedSort === "price-high") {
+          filteredProducts.sort((a, b) => {
+            return b.price - a.price;
+          });
+        } else if (selectedSort === "rating-high") {
+          filteredProducts.sort((a, b) => {
+            return b.rating - a.rating;
+          });
+        } else if (selectedSort === "name-az") {
+          filteredProducts.sort((a, b) => {
+            return a.title.localeCompare(b.title);
+          });
+        }
+
+        // ======================================
+        // DISPLAY
+        // ======================================
+
+        renderProducts();
+      }
+
+      // ==========================================
+      // RESET FILTER
+      // ==========================================
+
+      function resetFilters() {
+        searchInput.value = "";
+
+        categorySelect.value = "all";
+
+        sortSelect.value = "default";
+
+        filteredProducts = [...allProducts];
+
+        renderProducts();
+      }
+
+      // ==========================================
+      // SHOW PRODUCT DETAIL
+      // ==========================================
+
+      function showProductDetail(productId) {
+        const product = allProducts.find((product) => product.id === productId);
+
+        if (!product) {
+          return;
+        }
+
+        modalBody.innerHTML = `
+
+        <img
+            src="${product.thumbnail}"
+            alt="${product.title}"
+            class="modal-image"
+        >
+
+        <p class="modal-category">
+            ${product.category}
+        </p>
+
+        <h2 class="modal-title">
+            ${product.title}
+        </h2>
+
+        <p class="modal-description">
+            ${product.description}
+        </p>
+
+        <div class="modal-detail">
+
+            <div class="detail-item">
+                <span>Price</span>
+                <strong>$${product.price}</strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Rating</span>
+                <strong>⭐ ${product.rating}</strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Stock</span>
+                <strong>${product.stock}</strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Brand</span>
+                <strong>${product.brand || "Tidak tersedia"}</strong>
+            </div>
+
+        </div>
+    `;
+
+        productModal.classList.remove("hidden");
+      }
+
+      // ==========================================
+      // CLOSE MODAL
+      // ==========================================
+
+      function closeProductModal() {
+        productModal.classList.add("hidden");
+      }
+
+      // ==========================================
+      // EVENT SEARCH
+      // ==========================================
+
+      searchInput.addEventListener("input", applyFilters);
+
+      // ==========================================
+      // EVENT CATEGORY
+      // ==========================================
+
+      categorySelect.addEventListener("change", applyFilters);
+
+      // ==========================================
+      // EVENT SORT
+      // ==========================================
+
+      sortSelect.addEventListener("change", applyFilters);
+
+      // ==========================================
+      // EVENT RESET
+      // ==========================================
+
+      resetButton.addEventListener("click", resetFilters);
+
+      // ==========================================
+      // EVENT DETAIL BUTTON
+      // ==========================================
+
+      productContainer.addEventListener("click", (event) => {
+        const button = event.target.closest(".detail-button");
+
+        if (!button) {
+          return;
+        }
+
+        const productId = Number(button.dataset.id);
+
+        showProductDetail(productId);
+      });
+
+      // ==========================================
+      // CLOSE MODAL BUTTON
+      // ==========================================
+
+      closeModal.addEventListener("click", closeProductModal);
+
+      // ==========================================
+      // CLOSE MODAL CLICK OUTSIDE
+      // ==========================================
+
+      productModal.addEventListener("click", (event) => {
+        if (event.target === productModal) {
+          closeProductModal();
+        }
+      });
+
+      // ==========================================
+      // CLOSE MODAL ESCAPE
+      // ==========================================
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeProductModal();
+        }
+      });
+
+      // ==========================================
+      // START APPLICATION
+      // ==========================================
+
+      fetchProducts();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recipe Finder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>🍜 Recipe Finder</h1> 
+    <p>Cari resep favoritmu di sini!</p>
+  </header>
+
+  <main>
+    <!-- Pencarian & Filter -->
+    <section class="controls">
+      <input type="text" id="search-input" placeholder="🔍 Cari resep berdasarkan nama..." />
+      <select id="meal-filter">
+        <option value="">Semua Kategori</option>
+        <!-- Opsi kategori diisi otomatis oleh JavaScript -->
+      </select>
+      <button id="show-favorites">❤️ Favorit</button>
+    </section>
+
+    <!-- Daftar resep -->
+    <section id="recipe-grid" class="recipe-grid"></section>
+
+    <!-- Pesan loading / kosong / error -->
+    <p id="status-message">Memuat resep...</p>
+  </main>
+
+  <!-- Modal Detail Resep -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="modal-close">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
